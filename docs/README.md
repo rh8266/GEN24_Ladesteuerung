@@ -79,6 +79,7 @@ Besonderheiten:
 - Bei api.akkudoktor.net können Abschattungen und weitere Parameter angegeben werden.  
 - Bei open-meteo.com können verschiedene Wetterdienste konfiguriert werden, kein Account nötig.  
 - Bei DWD_mosmix_forecast wird aus den mosmix-Daten des DWD eine Prognose berechnet, kein Account nötig.  
+- Bei pvnode.com ist ein API-Key erforderlich (Free-Plan verfügbar), 15-Minuten-Prognose über Standort-ID (API V2) oder [pv.strings] (API V1).  
 
 ### 📉 EnergyController.py
 

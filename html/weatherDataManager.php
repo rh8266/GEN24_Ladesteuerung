@@ -449,6 +449,7 @@ const sourceColors = {
     'akkudoktor': '#9C27B0', // Lila
     'forecast.solar': '#87CEFA', // Hellblau
     'openmeteo': '#696969', // dunkelgrau
+    'pvnode': '#FF9800', // Orange
 };
 
 

@@ -1,3 +1,8 @@
+**[unreleased]**  
+- **Neuer Prognosedienst** pvnode_WeatherData.py für https://pvnode.com (API-Key erforderlich, Free-Plan verfügbar).  
+  Erweiterung der CONFIG/weather.ini um `[pvnode]` in CONFIG/weather_priv.ini übernehmen.  
+  Eintrag im Scheduler erfolgt automatisch (deaktiviert).  
+
 **[0.43.6] – 2026-10-05**  
 FIX: Wattpilot liefert Wert, obwohl kein Auto angesteckt
 FIX: Akkuschonung nach % SOC greift nicht mehr

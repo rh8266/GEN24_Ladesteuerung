@@ -57,6 +57,7 @@ function get_db($path, $GEN24_DIR) {
                 ['dwd.mosmix',                '2',        '5,7,9,11,13,15,17,19','*','*','*', $GEN24_DIR.'/start_PythonScript.sh FORECAST/DWD_mosmix_forecast.py',0,                            'dwd.mosmix'],
                 ['Akkudoktor WeatherData',    '4',        '5,7,9,11,13,15,17,19','*','*','*', $GEN24_DIR.'/start_PythonScript.sh FORECAST/Akkudoktor__WeatherData.py',0,                        'Akkudoktor'],
                 ['OpenMeteo WeatherData',     '35',       '5,7,9,11,13,15,17,19','*','*','*', $GEN24_DIR.'/start_PythonScript.sh FORECAST/OpenMeteo_WeatherData.py',0,                          'OpenMeteo'],
+                ['pvnode WeatherData',        '8',        '5,9,13',              '*','*','*', $GEN24_DIR.'/start_PythonScript.sh FORECAST/pvnode_WeatherData.py',0,                             'pvnode'],
                 ['DynamicPriceCheck',         '58',       '*',                   '*','*','*', $GEN24_DIR.'/start_PythonScript.sh -o DynPriceCheck.log DynamicPriceCheck.py schreiben',0,        'Dynamische Strompreise'],
                 // Container-sichere Log-Rotation via cp und > statt mv
                 ['Rotate Crontab.log',        '0',        '5',                   '*','*','1', 'cp '.$GEN24_DIR.'/Crontab.log '.$GEN24_DIR.'/old_Crontab.log; >'.$GEN24_DIR.'/Crontab.log',1,                                        'Log-Rotation Mo'],
@@ -116,6 +117,12 @@ function get_db($path, $GEN24_DIR) {
             $db->exec("INSERT INTO cron_jobs (Name, Minute, Stunde, Tag_Monat, Monat, Tag_Woche, Befehl, Aktiv, Notiz, Angelegt_Am)
                        SELECT 'dwd.mosmix', '6', '5,7,9,11,13,15,17,19', '*', '*', '*', '{$befehl_esc}', 0, 'dwd.mosmix', datetime('now','localtime')
                        WHERE NOT EXISTS (SELECT 1 FROM cron_jobs WHERE Name = 'dwd.mosmix')");
+
+            // Migration: 'pvnode WeatherData' eintragen, wenn Tabelle vorhanden aber Eintrag fehlt   #entWIGGlung
+            $befehl_esc = SQLite3::escapeString($GEN24_DIR.'/start_PythonScript.sh FORECAST/pvnode_WeatherData.py');
+            $db->exec("INSERT INTO cron_jobs (Name, Minute, Stunde, Tag_Monat, Monat, Tag_Woche, Befehl, Aktiv, Notiz, Angelegt_Am)
+                       SELECT 'pvnode WeatherData', '8', '5,9,13', '*', '*', '*', '{$befehl_esc}', 0, 'pvnode', datetime('now','localtime')
+                       WHERE NOT EXISTS (SELECT 1 FROM cron_jobs WHERE Name = 'pvnode WeatherData')");
         }
 
         return $db;
