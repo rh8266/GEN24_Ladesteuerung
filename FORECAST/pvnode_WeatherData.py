@@ -5,6 +5,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 import requests
+import json
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 import FUNCTIONS.functions
@@ -16,6 +17,8 @@ import FUNCTIONS.WeatherData
 # pvnode liefert 15-Minuten-Werte (mittlere Leistung des Intervalls, das am Zeitstempel endet).
 
 API_URL = 'https://api.pvnode.com'
+# Hier wird next_poll_at der letzten V2-Abfrage gespeichert (relativ zum GEN24-Verzeichnis)
+POLL_STATUS_DATEI = 'pvnode_poll.json'
 
 def _fetch_pvnode(url, params, label):
     """
@@ -76,13 +79,43 @@ def _sql_daten(dict_watts, Quelle, Gewicht):
             SQL_watts.append((key, Quelle, value, Gewicht, ''))
     return SQL_watts
 
+def _lese_poll_status(site_id):
+    # Liefert next_poll_at (UTC) der letzten Abfrage für diese site_id und forecast_days, sonst None
+    try:
+        with open(POLL_STATUS_DATEI, 'r') as datei:
+            status = json.load(datei)
+        if status.get('site_id') == site_id and status.get('forecast_days') == forecast_days:
+            return _parse_utc(status['next_poll_at'])
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    return None
+
+def _schreibe_poll_status(site_id, json_data):
+    # computed_at/next_poll_at liefert pvnode ohne Zeitzone, wegen timezone=utc als UTC behandelt
+    if not json_data.get('next_poll_at'):
+        return
+    try:
+        with open(POLL_STATUS_DATEI, 'w') as datei:
+            json.dump({'site_id': site_id, 'forecast_days': forecast_days,
+                       'computed_at': json_data.get('computed_at'),
+                       'next_poll_at': json_data['next_poll_at']}, datei)
+    except OSError as error:
+        print("### WARNUNG: "+POLL_STATUS_DATEI+" konnte nicht geschrieben werden: "+str(error))
+
 def loadLatestWeatherData_v2(Quelle, Gewicht):
     site_id = basics.getVarConf('pvnode', 'site_id', 'str')
+
+    # Vor next_poll_at liefert pvnode nur die gleiche Prognose aus dem Cache => Abfrage sparen
+    next_poll_at = _lese_poll_status(site_id)
+    if next_poll_at is not None and datetime.now(timezone.utc) < next_poll_at and not erzwingen:
+        return ([], "Keine neue Prognose vor "+next_poll_at.astimezone().strftime("%Y-%m-%d %H:%M")+", Abfrage übersprungen.")
+
     url = '{}/v2/forecast/{}'.format(API_URL, site_id)
     params = {'forecast_days': forecast_days, 'past_days': 0, 'timezone': 'utc'}
     json_data, fehler = _fetch_pvnode(url, params, 'site '+site_id)
     if json_data is None:
         return (None, fehler)
+    _schreibe_poll_status(site_id, json_data)
 
     try:
         werte = [(_parse_utc(wert['timestamp']), float(wert['pv_power'] or 0)) for wert in json_data['values']]
@@ -141,6 +174,8 @@ if __name__ == '__main__':
     offset_minuten = basics.getVarConf('pvnode', 'offset_minuten', 'eval')
     Gewicht = basics.getVarConf('pvnode', 'Gewicht', 'eval')
     Quelle = 'pvnode'
+    # Mit Parameter "erzwingen" wird auch vor next_poll_at abgefragt
+    erzwingen = 'erzwingen' in sys.argv[1:]
 
     format = "%H:%M:%S"
     now = datetime.now()
@@ -150,7 +185,9 @@ if __name__ == '__main__':
     else:
         data, data_err = loadLatestWeatherData_v2(Quelle, Gewicht)
 
-    if isinstance(data, list):
+    if data == []:
+        print(f'{Quelle}: {data_err}\n')
+    elif isinstance(data, list):
         weatherdata.storeWeatherData_SQL(data, Quelle, Gewicht, '', offset_minuten)
         # Ergebnis mit ForecastCalcMethod berechnen und in DB speichern
         weatherdata.store_forecast_result()
