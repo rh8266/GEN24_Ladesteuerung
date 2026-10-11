@@ -275,7 +275,8 @@ class InverterApi:
                     data_Sy = json.loads(url.text)
                     API_result = self.extract_API_values(data_Sy, SYMO_API_schluessel)
                     # Benötigte Werte mit den geholten API-Werten API zuweisen
-                    API_Sym['aktuellePVProduktion'] += int(API_result['PowerReal_PAC_Sum'])
+                    # Ohne Produktion (abends/nachts) fehlt PowerReal_PAC_Sum, der Energiezähler ist aber vorhanden => 0 W
+                    API_Sym['aktuellePVProduktion'] += int(API_result.get('PowerReal_PAC_Sum', 0))
                     API_Sym['AC_Produktion']        += int(API_result['EnergyReal_WAC_Sum_EverSince'])
                     API_Sym['DC_Produktion']        += int(API_result['EnergyReal_WAC_Sum_EverSince'])
                 except Exception as e:
