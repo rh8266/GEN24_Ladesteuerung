@@ -172,8 +172,9 @@ current_charge_Wh = battery_capacity_Wh - API['BattKapaWatt_akt'] # aktueller La
 user = basics.getVarConf('inverter','user', 'str')
 password = basics.getVarConf('inverter','password', 'str')
 Akku_MindestSOC = basics.getVarConf('dynprice','Akku_MindestSOC', 'eval')
-# Hier Hochkommas am Anfang und am Ende enternen
-password = password[1:-1]
+# Hier evtl. Hochkommas am Anfang und am Ende enternen
+if (password.startswith("'") and password.endswith("'")):
+    password = password[1:-1]
 #  Klasse FroniusGEN24 initiieren
 inverter_interface = InverterInterface(host_ip, user, password, API['Version'])
 batteries_array = inverter_interface.get_http_data()
