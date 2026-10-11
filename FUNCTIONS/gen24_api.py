@@ -286,6 +286,10 @@ class InverterApi:
                     Produktion_MAX_DB = sqlall.getSQLlastProduktion('PV_Daten.sqlite')
                     DB_AC = Produktion_MAX_DB[0]
                     DB_DC = Produktion_MAX_DB[1]
+                    # Noch keine Produktionswerte in der DB => kein Ersatzwert möglich, Symo überspringen
+                    if DB_AC is None or DB_DC is None:
+                        print("Keine Produktionswerte in PV_Daten.sqlite, Symo-Werte werden übersprungen!\n")
+                        return(API)
                     Offline_AC_DIFF = ((DB_DC - DB_AC) - (API['DC_Produktion'] - API['AC_Produktion']))
                     print("Offline_AC_DIFF: ", Offline_AC_DIFF)
                     if(Offline_AC_DIFF < 0): Offline_AC_DIFF = 0
