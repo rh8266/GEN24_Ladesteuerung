@@ -186,7 +186,10 @@ if __name__ == '__main__':
         data, data_err = loadLatestWeatherData_v2(Quelle, Gewicht)
 
     if data == []:
-        print(f'{Quelle}: {data_err}\n')
+        print(f'{Quelle}: {data_err}')
+        # Ohne Abfrage trotzdem Produktion und Ergebnis neu berechnen
+        weatherdata.store_forecast_result()
+        print(f'{Quelle}: Produktion und Ergebnisse ({ForecastCalcMethod}) {now.strftime(format)} aktualisiert.\n')
     elif isinstance(data, list):
         weatherdata.storeWeatherData_SQL(data, Quelle, Gewicht, '', offset_minuten)
         # Ergebnis mit ForecastCalcMethod berechnen und in DB speichern
